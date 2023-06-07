@@ -1,0 +1,65 @@
+{{- if or (.Values.centralagent.enabled) (.Values.central.enabled) }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: centralagent
+  namespace: {{ .Release.Namespace }}
+spec:
+  replicas: 1
+  serviceName: centralagent
+  selector:
+    matchLabels:
+      app: centralagent
+  template:
+    metadata:
+      labels:
+        app: centralagent
+        app.kubernetes.io/name: centralagent
+        {{- include "chart_common_labels" . | indent 8 }}
+        hi_common_version: {{ default "" .Values.common_version | quote }}
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: holoinsight-agent-cm
+        configMap:
+          name: holoinsight-agent-cm
+          defaultMode: 0644
+      containers:
+      - name: centralagent
+        {{- include "agent_image" . | indent 8 }}
+        env:
+        - name: HI_APP
+          value: centralagent
+        - name: HI_AGENT_MODE
+          value: "central"
+
+        {{- include "agent_common_env" . | indent 8 }}
+
+        - name: HI_CENTRAL_NAME
+          value: {{ .Values.centralagent.clusterName | quote }}
+        - name: "HI_CENTRAL_ALIBABACLOUD_METRIC_ENDPOINT"
+          value: {{ default "metrics-vpc.cn-hongkong.aliyuncs.com" .Values.central.aliyunMetricEndpoint }}
+
+        {{/* centralagent extra envs */}}
+        {{- if .Values.centralagent.envs }}
+        {{- toYaml .Values.centralagent.envs | nindent 8 }}
+        {{- end }}
+
+        {{/* centralagent resources */}}
+        resources: {{- toYaml .Values.centralagent.resources | nindent 10 }}
+        {{- include "agent_probe" . | indent 8 }}
+
+        volumeMounts:
+        - mountPath: /usr/local/holoinsight/agent/agent.yaml
+          name: holoinsight-agent-cm
+          subPath: centralagent_agent.yaml
+        {{- if .Values.centralagent.volumeMounts }}
+        {{- toYaml .Values.centralagent.volumeMounts | nindent 8 }}
+        {{- end}}
+
+  {{- if .Values.centralagent.volumeClaimTemplates }}
+  volumeClaimTemplates: {{ .Values.centralagent.volumeClaimTemplates | toYaml | nindent 2 }}
+  {{- end }}
+
+{{- end }}

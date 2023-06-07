@@ -1,0 +1,110 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: holoinsight-collector
+  namespace: {{ .Release.namespace }}
+spec:
+  replicas: {{ .Values.collector.replicas }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-collector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: holoinsight-collector
+        {{- include "chart_common_labels" . | indent 8 }}
+        {{- if .Values.collector.labels }}
+        {{- toYaml .Values.collector.labels | nindent 8 }}
+        {{- end }}
+    spec:
+      restartPolicy: Always
+      volumes:
+      - name: collector-cm
+        configMap:
+          name: collector-cm
+      containers:
+      - name: otel-collector
+        image: "{{ .Values.collector.image }}"
+        env:
+        {{- if .Values.server.env }}
+          {{- toYaml .Values.server.env | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        - name: collector-cm
+          mountPath: /config/config.yml
+          subPath: config.yml
+        ports:
+        - name: grpc
+          containerPort: 11800
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 11800
+          failureThreshold: 3
+          successThreshold: 1
+          timeoutSeconds: 10
+          periodSeconds: 3
+          initialDelaySeconds: 10
+        {{- if .Values.collector.resources }}
+        resources:
+          {{- toYaml .Values.collector.resources | nindent 10 }}
+        {{- end}}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: {{ .Release.namespace }}
+  name: collector
+spec:
+  ports:
+  - name: grpc-skywalking
+    port: 11800
+    protocol: TCP
+    targetPort: 11800
+  selector:
+    app.kubernetes.io/name: holoinsight-collector
+
+---
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  namespace: {{ .Release.namespace }}
+  name: collector-cm
+data:
+  config.yml: |
+    receivers:
+      holoinsight_skywalking:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:11800
+            auth:
+              authenticator: http_forwarder_auth
+        holoinsight_server:
+          http:
+            endpoint: gateway:8080
+
+    exporters:
+      otlp:
+        endpoint: gateway:11800
+        tls:
+          insecure: true
+
+    processors:
+      batch:
+
+    extensions:
+      health_check:
+      pprof:
+      zpages:
+      http_forwarder_auth:
+        url: http://gateway:8080/internal/api/gateway/apikey/check
+
+    service:
+      extensions: [ pprof, health_check, http_forwarder_auth ]
+      pipelines:
+        traces:
+          receivers: [ holoinsight_skywalking ]
+          exporters: [ otlp ]
+          processors: [ batch ]

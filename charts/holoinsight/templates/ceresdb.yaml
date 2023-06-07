@@ -1,0 +1,148 @@
+{{ if .Values.db.ceresdb.enabled | default true }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: holoinsight-ceresdb
+  namespace: {{ .Release.namespace }}
+spec:
+  serviceName: holoinsight-ceresdb
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-ceresdb
+  template:
+    metadata:
+      name: holoinsight-ceresdb
+      labels:
+        app.kubernetes.io/name: holoinsight-ceresdb
+        {{- include "chart_common_labels" . | indent 8 }}
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: ceresdb
+        image: {{ .Values.db.ceresdb.image }}
+        ports:
+        - containerPort: 8831
+        readinessProbe:
+          tcpSocket:
+            port: 8831
+          failureThreshold: 3
+          successThreshold: 1
+          timeoutSeconds: 10
+          periodSeconds: 3
+          initialDelaySeconds: 10
+        {{- if .Values.db.ceresdb.resources }}
+        resources:
+          {{- toYaml .Values.db.ceresdb.resources | nindent 10 }}
+        {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: ceresdb
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: holoinsight-ceresdb
+spec:
+  clusterIP: None
+  ports:
+  - name: p8831
+    protocol: TCP
+    port: 8831
+    targetPort: 8831
+  - name: p3307
+    protocol: TCP
+    port: 3307
+    targetPort: 3307
+  - name: p5440
+    protocol: TCP
+    port: 5440
+    targetPort: 5440
+  selector:
+    app.kubernetes.io/name: holoinsight-ceresdb
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: holoinsight-prometheus
+  namespace: {{ .Release.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-prometheus
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: holoinsight-prometheus
+    spec:
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: cm
+        configMap:
+          name: prometheus-cm
+      containers:
+      - name: prometheus
+        image: prom/prometheus:latest
+        imagePullPolicy: Always
+        volumeMounts:
+        - mountPath: /etc/prometheus/prometheus.yml
+          name: cm
+          subPath: prometheus.yml
+        ports:
+        - containerPort: 9090
+        readinessProbe:
+          tcpSocket:
+            port: 9090
+          failureThreshold: 3
+          successThreshold: 1
+          timeoutSeconds: 10
+          periodSeconds: 10
+          initialDelaySeconds: 10
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+          limits:
+            cpu: "0.25"
+            memory: "256Mi"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-cm
+  namespace: {{ .Release.namespace }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s # Set the scrape interval to every 15 seconds. Default is every 1 minute.
+      evaluation_interval: 15s # Evaluate rules every 15 seconds. The default is every 1 minute.
+    remote_write:
+    - url: "http://ceresdb:5440/prom/v1/write"
+    remote_read:
+    - url: "http://ceresdb:5440/prom/v1/read"
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: holoinsight-prometheus
+spec:
+  clusterIP: None
+  ports:
+  - name: p9090
+    protocol: TCP
+    port: 9090
+  selector:
+    app.kubernetes.io/name: holoinsight-prometheus
+
+{{- end }}

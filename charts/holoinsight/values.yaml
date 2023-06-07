@@ -1,0 +1,90 @@
+# Default values for holoinsight.
+
+# image is the image config
+image:
+  # pullPolicy is the pullPolicy for all containers
+  pullPolicy: IfNotPresent
+
+# server is config for holoinsight-server
+server:
+  # image is the holoinsight-server image, defaults to holoinsight/server:latest
+  image: holoinsight/server:latest
+  # replicas defaults to 1. Production-level deployment must be set greater than 1 to achieve high availability.
+  replicas: 1
+  minReadySeconds: 10
+  maxUnavailable: 1
+  # resources defaults to 2C4G
+  resources:
+    requests:
+      cpu: "2"
+      memory: "4Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  applicationYaml: |
+    spring:
+      datasource:
+        url: jdbc:mysql://mysql:3306/holoinsight?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&rewriteBatchedStatements=true&socketTimeout=15000&connectTimeout=3000&useTimezone=true&serverTimezone=Asia/Shanghai
+        username: holoinsight
+        password: holoinsight
+        driver-class-name: com.mysql.cj.jdbc.Driver
+      data:
+        mongodb:
+          uri: mongodb://holoinsight:holoinsight@mongo:27017/holoinsight?keepAlive=true&maxIdleTimeMS=1500000&maxWaitTime=120000&connectTimeout=10000&socketTimeout=10000&socketKeepAlive=true&retryWrites=true
+    holoinsight:
+      roles:
+        active: query,registry,gateway,home,meta,apm
+      metric:
+        storage:
+          type: ceresdbx
+        pql:
+          remote:
+            enabled: true
+            endpoints:
+              default:
+                host: prometheus
+                port: 9090
+      meta:
+        database: holoinsight
+      flyway:
+        enabled: true
+      features:
+        active: trace
+      storage:
+        elasticsearch:
+          enable: true
+          hosts: es
+          port: 9200
+      security:
+        whiteHosts: server,gateway,gateway.holoinsight-server
+
+# collector is config for holoinsight-collector
+collector:
+  # enabled represents
+  enabled: true
+  # image is the holoinsight-collector image, defaults holoinsight/otelcontribcol:latest
+  image: holoinsight/otelcontribcol:latest
+  # replicas defaults to 1. Production-level deployment must be set greater than 1 to achieve high availability.
+  replicas: 1
+
+
+# db is the config of the database that holoinsight-server depends on.
+# When deploying at production level, you should manually prepare these databases and configure them in high availability mode instead of using the database provided by this Helm Chart.
+# The database provided by this Helm Chart is only configured with a single instance and has no persistent storage. Once restarted, it means data loss.
+db:
+  mysql:
+    enabled: true
+    image: mysql:8
+    rootPassword: holoinsight
+    user: holoinsight
+    password: holoinsight
+    database: holoinsight
+  ceresdb:
+    enabled: true
+    image: ceresdb/ceresdb-server:v1.0.0
+  es:
+    enabled: true
+    image: elasticsearch:7.16.1
+  mongo:
+    enabled: true
+    image: mongo:4.4.18

@@ -1,0 +1,66 @@
+{{ if .Values.db.es.enabled | default true }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: holoinsight-es
+  namespace: {{ .Release.namespace }}
+spec:
+  serviceName: holoinsight-es
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-es
+  template:
+    metadata:
+      name: holoinsight-es
+      labels:
+        app.kubernetes.io/name: holoinsight-es
+        {{- include "chart_common_labels" . | indent 8 }}
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: es
+        image: {{ .Values.db.es.image }}
+        env:
+        - name: discovery.type
+          value: single-node
+        - name: ES_JAVA_OPTS
+          value: -Xmx1g
+        ports:
+        - containerPort: 9200
+        readinessProbe:
+          tcpSocket:
+            port: 9200
+          failureThreshold: 3
+          successThreshold: 1
+          timeoutSeconds: 10
+          periodSeconds: 3
+          initialDelaySeconds: 10
+        {{- if .Values.db.es.env }}
+          {{- toYaml .Values.db.es.env | nindent 10 }}
+        {{- end }}
+        {{- if .Values.db.es.resources }}
+        resources:
+          {{- toYaml .Values.db.es.resources | nindent 10 }}
+        {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: es
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: holoinsight-es
+spec:
+  clusterIP: None
+  ports:
+  - name: p9200
+    protocol: TCP
+    port: 9200
+  selector:
+    app.kubernetes.io/name: holoinsight-es
+
+
+{{- end }}

@@ -1,0 +1,134 @@
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: holoinsight-server
+  namespace: {{ .Release.namespace }}
+spec:
+  serviceName: holoinsight-server
+  replicas: {{ .Values.server.replicas }}
+  minReadySeconds: {{ .Values.server.minReadySeconds }}
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: {{ .Values.server.maxUnavailable }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-server
+  template:
+    metadata:
+      name: holoinsight-server
+      labels:
+        app.kubernetes.io/name: holoinsight-server
+        {{- include "chart_common_labels" . | indent 8 }}
+        {{- if .Values.server.labels }}
+          {{- toYaml .Values.server.labels | nindent 8 }}
+        {{- end }}
+    spec:
+      restartPolicy: Always
+      volumes:
+      - name: server-cm
+        configMap:
+          name: server-cm
+      containers:
+      - name: server
+        image: {{ .Values.server.image }}
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        env:
+        {{- if .Values.server.env }}
+          {{- toYaml .Values.server.env | nindent 10 }}
+        {{- end }}
+        readinessProbe:
+          exec:
+            command: [ "sh", "/home/admin/bin/health.sh" ]
+          successThreshold: 1
+          failureThreshold: 3
+          timeoutSeconds: 10
+          periodSeconds: 3
+          initialDelaySeconds: 10
+        ports:
+        - name: http
+          containerPort: 80
+          protocol: TCP
+        - name: p19610
+          containerPort: 19610
+          protocol: TCP
+        - name: p7202
+          containerPort: 7202
+          protocol: TCP
+        volumeMounts:
+        - mountPath: /home/admin/application.yaml
+          name: server-cm
+          subPath: application.yaml
+        {{- if .Values.server.resources }}
+        resources:
+          {{- toYaml .Values.server.resources | nindent 10 }}
+        {{- end }}
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: server-cm
+  namespace: {{ .Release.namespace }}
+data:
+  application.yaml: {{- default "" .Values.server.applicationYaml | toYaml | indent 4 }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: registry
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: registry
+spec:
+  ports:
+  - name: grpc-for-agent
+    protocol: TCP
+    port: 7202
+    targetPort: 7202
+  selector:
+    app.kubernetes.io/name: holoinsight-server
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: gateway
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: gateway
+spec:
+  ports:
+  - name: grpc-for-agent
+    protocol: TCP
+    port: 19610
+    targetPort: 19610
+  - name: p8080
+    protocol: TCP
+    port: 8080
+    targetPort: 8080
+  - name: p11800
+    protocol: TCP
+    port: 11800
+    targetPort: 11800
+  selector:
+    app.kubernetes.io/name: holoinsight-server
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: home
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: home
+spec:
+  ports:
+  - name: home
+    protocol: TCP
+    port: 80
+    targetPort: 80
+  selector:
+    app.kubernetes.io/name: holoinsight-server

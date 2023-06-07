@@ -1,0 +1,112 @@
+# guideline https://helm.sh/docs/chart_best_practices/values/
+
+# namespace is the k8s namespace for holoinsight-agent.
+namespace: holoinsight-agent
+
+# common_version will be set on pod labels in order to force an update.
+common_version: "0"
+
+# imagePullPolicy is the image pull policy for agent image.
+# image which contains 'SNAPSHOT' will force an imagePullPolicy 'Always'.
+# [deprecated]
+imagePullPolicy: IfNotPresent
+
+# [required]
+# apikey is used for authentication to server side.
+# apikey: "YOUR_APIKEY"
+
+# workspace is used to identify different user environments, such as 'dev', 'pre' and 'prod'.
+workspace: "default"
+
+# cluster is used to identify different k8s clusters in the same workspace.
+# It can be any unique string in the same workspace.
+cluster: "default"
+
+# agent common configs
+agent:
+  image: registry-vpc.cn-shanghai.aliyuncs.com/holoinsight/agent:1.9.0
+  # agent common envs
+  vars: [ ]
+  probe:
+    enabled: true
+  misc:
+    useSupervisord: false
+
+# [required]
+# cadvisorImage is the image of cadvisor used by holoinsight-agent.
+# Here is an example image, you need to set a different image according to your deployment environment.
+cadvisor:
+  image: registry-vpc.cn-shanghai.aliyuncs.com/holoinsight/cadvisor:v0.44.0
+  #image: gcr.io/cadvisor/cadvisor:v0.44.0
+  resources:
+    requests:
+      cpu: "0"
+      memory: "0"
+    limits:
+      cpu: "0.25"
+      memory: "256Mi"
+  volumeMounts: []
+  volumes: []
+
+server:
+  registry:
+    addr: registry.holoinsight-server:7202
+  gateway:
+    addr: gateway.holoinsight-server:19610
+  secure: true
+
+central:
+  enabled: false
+  aliyunMetricEndpoint: metrics.cn-hongkong.aliyuncs.com
+
+# [optional]
+# agentK8sMetaSidecarCheck is used to define how to identify sidecar containers.
+# For example:
+# 'name:sidecar' means containers whose name contains 'sidecar' are sidecar containers.
+# 'env:IS_SIDECAR:true' means containers whose has env 'IS_SIDECAR=true' are sidecar containers.
+# 'name:sidecar,env:IS_SIDECAR:true' means containers whose name contains 'sidecar' and has env 'IS_SIDECAR=true' are sidecar containers.
+# agentK8sMetaSidecarCheck: "name:sidecar"
+
+daemonagent:
+  minReadySeconds: 10
+  maxUnavailable: 1
+  envs: [ ]
+  config: |
+  resources:
+    requests:
+      cpu: "0"
+      memory: "0"
+      ephemeral-storage: "0"
+    limits:
+      cpu: "0.25"
+      memory: "256Mi"
+      ephemeral-storage: "10Gi"
+
+centralagent:
+  # enabled controls whether centralagent is need to be deployed.
+  enabled: true
+  # clusterName is the name of the central agent cluster
+  # defaults to 'global0'
+  clusterName: global0
+  # tenant is the tenant of apikey
+  # [required]
+  #tenant: ""
+  # env is the extra envs for central agent container
+  envs: [ ]
+  # resources is the resources config for central agent container
+  resources:
+    requests:
+      cpu: "0"
+      memory: "0"
+    limits:
+      cpu: "0.25"
+      memory: "256Mi"
+  # volumeMounts is the resources config for central agent container
+  volumeMounts: []
+  # volumeClaimTemplates is the resources config for central agent container
+  volumeClaimTemplates: []
+  config: |
+
+
+image:
+  pullPolicy: IfNotPresent

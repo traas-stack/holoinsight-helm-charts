@@ -1,0 +1,95 @@
+{{ if .Values.db.mysql.enabled | default false }}
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: holoinsight-mysql
+  namespace: {{ .Release.namespace }}
+spec:
+  serviceName: mysql
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-mysql
+  template:
+    metadata:
+      name: holoinsight-mysql
+      labels:
+        app.kubernetes.io/name: holoinsight-mysql
+        {{- include "chart_common_labels" . | indent 8 }}
+    spec:
+      restartPolicy: Always
+      volumes:
+      - name: cm
+        configMap:
+          name: mysql-cm
+      containers:
+      - name: mysql
+        image: {{ .Values.db.mysql.image }}
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          value: {{ .Values.db.mysql.rootPassword }}
+        - name: MYSQL_USER
+          value: {{ .Values.db.mysql.user }}
+        - name: MYSQL_PASSWORD
+          value: {{ .Values.db.mysql.password }}
+        - name: MYSQL_DATABASE
+          value: {{ .Values.db.mysql.database }}
+        volumeMounts:
+        - mountPath: /etc/mysql/conf.d/my.cnf
+          name: cm
+          subPath: my.cnf
+        ports:
+        - name: mysql
+          containerPort: 3306
+          protocol: TCP
+        readinessProbe:
+          tcpSocket:
+            port: 3306
+          periodSeconds: 3
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        {{- if .Values.db.mysql.resources }}
+        resources:
+          {{- toYaml .Values.db.mysql.resources | nindent 10 }}
+        {{- end }}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: holoinsight-mysql
+spec:
+  clusterIP: None
+  ports:
+  - name: mysql
+    protocol: TCP
+    port: 3306
+    targetPort: 3306
+  selector:
+    app.kubernetes.io/name: holoinsight-mysql
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mysql-cm
+  namespace: {{ .Release.namespace }}
+data:
+  my.cnf: |
+    [mysqld]
+    character_set_server=utf8
+    [mysql]
+    default-character-set = utf8
+    [mysql.server]
+    default-character-set = utf8
+    [mysqld_safe]
+    default-character-set = utf8
+    [client]
+    default-character-set = utf8
+
+{{- end }}

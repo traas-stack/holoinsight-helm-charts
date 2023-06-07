@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: cadvisor
+  namespace: {{ .Release.Namespace }}
+  annotations:
+    seccomp.security.alpha.kubernetes.io/pod: 'docker/default'
+spec:
+  selector:
+    matchLabels:
+      app: cadvisor
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        app: cadvisor
+        app.kubernetes.io/name: cadvisor
+        {{- include "chart_common_labels" . | indent 8 }}
+    spec:
+      containers:
+      - name: cadvisor
+        image: {{ .Values.cadvisor.image }}
+        args:
+        - --allow_dynamic_housekeeping=false
+        #- --global_housekeeping_interval=1m0s
+        - --housekeeping_interval=5s                           # kubernetes default args
+        - --max_housekeeping_interval=5s
+        #- --max_procs=0
+        - --storage_duration=2m
+        #        - --event_storage_event_limit=default=0
+        #        - --event_storage_age_limit=default=0
+        #- --enable_metrics=cpu,memory,network,disk,diskIO,tcp,cpuLoad,app,process,advtcp
+        - --enable_metrics=cpu,memory,network,tcp,disk,diskIO,cpuLoad
+        - --enable_load_reader=true
+        #- --enable_metrics=app,cpu,disk,diskIO,memory,network,process
+        # disable docker_only, We need pod cgroup stats
+        #- --docker_only
+        - --store_container_labels=false
+        #- --whitelisted_container_labels=io.kubernetes.container.name,io.kubernetes.pod.name,io.kubernetes.pod.namespace
+
+        {{/* cadvisor resources */}}
+        resources: {{- toYaml .Values.cadvisor.resources | nindent 10 }}
+
+        volumeMounts:
+        - name: rootfs
+          mountPath: /rootfs
+          readOnly: true
+        - name: var-run
+          mountPath: /var/run
+          readOnly: true
+        - name: sys
+          mountPath: /sys
+          readOnly: true
+        - name: docker
+          mountPath: /var/lib/docker
+          readOnly: true
+        - name: disk
+          mountPath: /dev/disk
+          readOnly: true
+        {{- if .Values.cadvisor.volumeMounts }}
+        {{- toYaml .Values.cadvisor.volumeMounts | nindent 8 }}
+        {{- end }}
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+      automountServiceAccountToken: false
+      terminationGracePeriodSeconds: 30
+      volumes:
+      - name: rootfs
+        hostPath:
+          path: /
+      - name: var-run
+        hostPath:
+          path: /var/run
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: docker
+        hostPath:
+          path: /var/lib/docker
+      - name: disk
+        hostPath:
+          path: /dev/disk
+      {{- if .Values.cadvisor.volumes }}
+      {{- toYaml .Values.cadvisor.volumes | nindent 6 }}
+      {{- end }}
