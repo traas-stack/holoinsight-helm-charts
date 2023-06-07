@@ -1,0 +1,48 @@
+apiVersion: v1
+entries:
+  holoinsight:
+  - annotations:
+      artifacthub.io/license: Apache-2.0
+    apiVersion: v2
+    appVersion: 0.2.0
+    created: "2023-06-07T16:03:26.685448661Z"
+    description: HoloInsight Helm chart for Kubernetes
+    digest: e1cb1ff83fa93bbc830e9e466447ee00ef87b8f022d7e351a1a1bd874301e89f
+    home: https://github.com/traas-stack/holoinsight
+    icon: https://github.com/traas-stack/holoinsight/raw/main/docs/logo/logo.png
+    keywords:
+    - holoinsight
+    - monitor
+    maintainers:
+    - email: xzchaoo@gmail.com
+      name: xzchaoo
+      url: https://github.com/xzchaoo
+    name: holoinsight
+    type: application
+    urls:
+    - https://github.com/traas-stack/holoinsight-helm-charts/releases/download/holoinsight-0.2.3/holoinsight-0.2.3.tgz
+    version: 0.2.3
+  holoinsight-agent:
+  - annotations:
+      artifacthub.io/license: Apache-2.0
+    apiVersion: v2
+    appVersion: 0.2.0
+    created: "2023-06-07T16:03:26.859545405Z"
+    description: HoloInsight Agent Helm chart for Kubernetes
+    digest: 0dc1310d0f3be4c5d49a6ec04d79bfb9e1220bae89979afc4c217918218c3617
+    home: https://github.com/traas-stack/holoinsight-agent
+    icon: https://github.com/traas-stack/holoinsight/raw/main/docs/logo/logo.png
+    keywords:
+    - holoinsight
+    - holoinsight-agent
+    - monitor
+    maintainers:
+    - email: xzchaoo@gmail.com
+      name: xzchaoo
+      url: https://github.com/xzchaoo
+    name: holoinsight-agent
+    type: application
+    urls:
+    - https://github.com/traas-stack/holoinsight-helm-charts/releases/download/holoinsight-agent-0.2.3/holoinsight-agent-0.2.3.tgz
+    version: 0.2.3
+generated: "2023-06-07T16:03:26.859550405Z"
