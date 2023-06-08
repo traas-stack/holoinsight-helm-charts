@@ -33,7 +33,11 @@ spec:
       containers:
       - name: server
         image: {{ .Values.server.image }}
+        {{- if or (contains "-SNAPSHOT" .Values.server.image) (contains ":latest" .Values.server.image) }}
+        imagePullPolicy: Always
+        {{- else }}
         imagePullPolicy: {{ .Values.image.pullPolicy }}
+        {{- end }}
         env:
         {{- if .Values.server.env }}
           {{- toYaml .Values.server.env | nindent 10 }}
