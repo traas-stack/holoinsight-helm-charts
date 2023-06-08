@@ -1,0 +1,36 @@
+# This is a simple values.yaml example. It is good for first deploy.
+
+apikey: "default"
+common_version: '0'
+workspace: "default"
+cluster: "default"
+
+server:
+  registry:
+    addr: registry.holoinsight-server:7202
+  gateway:
+    addr: gateway.holoinsight-server:19610
+  secure: false
+
+image:
+  pullPolicy: Always
+
+agent:
+  image: holoinsight/agent:latest
+
+# If you are using containerd or containerd based k3s, you should mount containerd run directory into cadvisor.
+# The following is the config for k3s+containerd.
+cadvisor:
+  # Users in China can use this image instead of gcr.io/cadvisor/cadvisor:v0.44.0 for better network access.
+  # image: registry-vpc.cn-shanghai.aliyuncs.com/holoinsight/cadvisor:v0.44.0
+  volumes:
+  - name: containerd
+    hostPath:
+      path: /run/k3s/containerd
+  volumeMounts:
+  - name: containerd
+    mountPath: /run/containerd
+    readOnly: true
+
+centralagent:
+  enabled: false

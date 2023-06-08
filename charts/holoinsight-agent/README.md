@@ -20,7 +20,5 @@ To uninstall the chart:
     helm delete -n holoinsight-agent holoinsight-agent
 
 ## Changelogs
-### To-0.2.3
-...
-### To-0.2.2
-...
+### To-1.0.0
+- First version

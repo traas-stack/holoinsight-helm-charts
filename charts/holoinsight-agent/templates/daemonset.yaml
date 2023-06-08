@@ -21,7 +21,7 @@ spec:
         {{- include "chart_common_labels" . | indent 8 }}
         hi_common_version: {{ default "" .Values.common_version | quote }}
     spec:
-      restartPolicy: Always
+      restartPolicy: OnFailure
       terminationGracePeriodSeconds: 30
       volumes:
       - name: data

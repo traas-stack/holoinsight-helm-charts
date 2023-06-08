@@ -1,4 +1,4 @@
-{{- if or (.Values.centralagent.enabled) (.Values.central.enabled) }}
+{{- if .Values.centralagent.enabled }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -39,7 +39,7 @@ spec:
         - name: HI_CENTRAL_NAME
           value: {{ .Values.centralagent.clusterName | quote }}
         - name: "HI_CENTRAL_ALIBABACLOUD_METRIC_ENDPOINT"
-          value: {{ default "metrics-vpc.cn-hongkong.aliyuncs.com" .Values.central.aliyunMetricEndpoint }}
+          value: {{ default "metrics-vpc.cn-hongkong.aliyuncs.com" .Values.centralagent.aliyunMetricEndpoint }}
 
         {{/* centralagent extra envs */}}
         {{- if .Values.centralagent.envs }}

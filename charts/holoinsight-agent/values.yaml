@@ -1,30 +1,24 @@
 # guideline https://helm.sh/docs/chart_best_practices/values/
 
-# namespace is the k8s namespace for holoinsight-agent.
-namespace: holoinsight-agent
-
-# common_version will be set on pod labels in order to force an update.
-common_version: "0"
-
-# imagePullPolicy is the image pull policy for agent image.
-# image which contains 'SNAPSHOT' will force an imagePullPolicy 'Always'.
-# [deprecated]
-imagePullPolicy: IfNotPresent
-
 # [required]
 # apikey is used for authentication to server side.
-# apikey: "YOUR_APIKEY"
+apikey: "default"
 
+# [required]
 # workspace is used to identify different user environments, such as 'dev', 'pre' and 'prod'.
 workspace: "default"
 
+# [required]
 # cluster is used to identify different k8s clusters in the same workspace.
 # It can be any unique string in the same workspace.
 cluster: "default"
 
+# common_version will be set on pod labels in order to force an update.
+common_version: "0"
+
 # agent common configs
 agent:
-  image: registry-vpc.cn-shanghai.aliyuncs.com/holoinsight/agent:1.9.0
+  image: holoinsight/agent:latest
   # agent common envs
   vars: [ ]
   probe:
@@ -36,8 +30,7 @@ agent:
 # cadvisorImage is the image of cadvisor used by holoinsight-agent.
 # Here is an example image, you need to set a different image according to your deployment environment.
 cadvisor:
-  image: registry-vpc.cn-shanghai.aliyuncs.com/holoinsight/cadvisor:v0.44.0
-  #image: gcr.io/cadvisor/cadvisor:v0.44.0
+  image: gcr.io/cadvisor/cadvisor:v0.44.0
   resources:
     requests:
       cpu: "0"
@@ -54,10 +47,6 @@ server:
   gateway:
     addr: gateway.holoinsight-server:19610
   secure: true
-
-central:
-  enabled: false
-  aliyunMetricEndpoint: metrics.cn-hongkong.aliyuncs.com
 
 # [optional]
 # agentK8sMetaSidecarCheck is used to define how to identify sidecar containers.
@@ -84,7 +73,7 @@ daemonagent:
 
 centralagent:
   # enabled controls whether centralagent is need to be deployed.
-  enabled: true
+  enabled: false
   # clusterName is the name of the central agent cluster
   # defaults to 'global0'
   clusterName: global0
@@ -105,6 +94,7 @@ centralagent:
   volumeMounts: []
   # volumeClaimTemplates is the resources config for central agent container
   volumeClaimTemplates: []
+  aliyunMetricEndpoint: metrics.cn-hongkong.aliyuncs.com
   config: |
 
 
