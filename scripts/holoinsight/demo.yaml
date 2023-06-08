@@ -1,0 +1,185 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: holoinsight-demo-client
+  namespace: holoinsight-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-demo-client
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: holoinsight-demo-client
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: demo-client
+        image: holoinsight/demo-client:latest
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: SW_AGENT_AUTHENTICATION
+          value: "default"
+        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES
+          value: "collector.holoinsight-server:11800"
+        - name: SW_AGENT_FORCE_TLS
+          value: "false"
+        - name: APP
+          value: holoinsight-demo-client
+        - name: SW_AGENT_NAME
+          value: holoinsight-demo-client
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: holoinsight-demo-server
+  namespace: holoinsight-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-demo-server
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: holoinsight-demo-server
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: demo-server
+        image: holoinsight/demo-server:latest
+        env:
+        - name: JAVA_OPTS
+          value: "-Xmx256m"
+        - name: SW_AGENT_AUTHENTICATION
+          value: "default"
+        - name: SW_AGENT_COLLECTOR_BACKEND_SERVICES
+          value: "collector.holoinsight-server:11800"
+        - name: SW_AGENT_FORCE_TLS
+          value: "false"
+        - name: APP
+          value: holoinsight-demo-server
+        - name: SW_AGENT_NAME
+          value: holoinsight-demo-server
+        - name: SPRING_DATASOURCE_URL
+          value: jdbc:mysql://mysql.holoinsight-server:3306/holoinsight?useUnicode=true&characterEncoding=UTF-8&autoReconnect=true&rewriteBatchedStatements=true&socketTimeout=15000&connectTimeout=3000&useTimezone=true&serverTimezone=Asia/Shanghai
+        - name: SPRING_DATASOURCE_USERNAME
+          value: holoinsight
+        - name: SPRING_DATASOURCE_PASSWORD
+          value: holoinsight
+        resources:
+          requests:
+            cpu: "0"
+            memory: "0"
+          limits:
+            cpu: "1"
+            memory: "512Mi"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: holoinsight-demo-redis
+  namespace: holoinsight-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-demo-redis
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: holoinsight-demo-redis
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: demo-redis
+        image: redis:5
+
+#---
+#apiVersion: apps/v1
+#kind: Deployment
+#metadata:
+#  name: holoinsight-demo-mysql
+#  namespace: holoinsight-demo
+#spec:
+#  replicas: 1
+#  selector:
+#    matchLabels:
+#      app.kubernetes.io/name: holoinsight-demo-mysql
+#  template:
+#    metadata:
+#      labels:
+#        app.kubernetes.io/name: holoinsight-demo-mysql
+#    spec:
+#      restartPolicy: Always
+#      containers:
+#      - name: demo-mysql
+#        image: mysql:8
+#
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: holoinsight-demo
+  name: demo-server
+spec:
+  ports:
+  - name: p8080
+    port: 8080
+    protocol: TCP
+    targetPort: 8080
+  - name: p8001
+    port: 8001
+    protocol: TCP
+    targetPort: 8001
+  selector:
+    app.kubernetes.io/name: holoinsight-demo-server
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: holoinsight-demo
+  name: demo-redis
+spec:
+  clusterIP: None
+  ports:
+  - name: p6379
+    port: 6379
+    protocol: TCP
+    targetPort: 6379
+  selector:
+    app.kubernetes.io/name: holoinsight-demo-redis
+
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  namespace: holoinsight-demo
+  name: mysql
+spec:
+  clusterIP: None
+  ports:
+  - name: p3306
+    port: 3306
+    protocol: TCP
+    targetPort: 3306
+  selector:
+    app.kubernetes.io/name: holoinsight-demo-mysql
