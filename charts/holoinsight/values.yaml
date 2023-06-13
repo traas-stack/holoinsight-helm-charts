@@ -53,8 +53,8 @@ server:
       storage:
         elasticsearch:
           enable: true
-          hosts: es
-          port: 9200
+          hosts: tatris
+          port: 6060
       security:
         whiteHosts: server,gateway,gateway.holoinsight-server
 
@@ -83,8 +83,11 @@ db:
     enabled: true
     image: ceresdb/ceresdb-server:v1.0.0
   es:
-    enabled: true
+    enabled: false
     image: elasticsearch:7.16.1
+  tatris:
+    enabled: true
+    image: tatrisio/tatris:latest
   mongo:
     enabled: true
     image: mongo:4.4.18
