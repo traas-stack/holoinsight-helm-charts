@@ -67,7 +67,6 @@ collector:
   # replicas defaults to 1. Production-level deployment must be set greater than 1 to achieve high availability.
   replicas: 1
 
-
 # db is the config of the database that holoinsight-server depends on.
 # When deploying at production level, you should manually prepare these databases and configure them in high availability mode instead of using the database provided by this Helm Chart.
 # The database provided by this Helm Chart is only configured with a single instance and has no persistent storage. Once restarted, it means data loss.
