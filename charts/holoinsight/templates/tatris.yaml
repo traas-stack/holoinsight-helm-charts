@@ -8,7 +8,7 @@ metadata:
 spec:
   serviceName: holoinsight-tatris
   replicas: 1
-  selector:
+  selector:c
     matchLabels:
       app.kubernetes.io/name: holoinsight-tatris
   template:
