@@ -1,0 +1,80 @@
+{{ if .Values.db.tatris.enabled | default true }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: holoinsight-tatris
+  namespace: {{ .Release.namespace }}
+spec:
+  serviceName: holoinsight-tatris
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-tatris
+  template:
+    metadata:
+      name: holoinsight-tatris
+      labels:
+        app.kubernetes.io/name: holoinsight-tatris
+        {{- include "chart_common_labels" . | indent 8 }}
+    spec:
+      restartPolicy: Always
+      containers:
+      - name: tatris
+        image: {{ .Values.db.tatris.image }}
+        imagePullPolicy: Always
+        lifecycle:
+          postStart:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - sudo ln -snf /usr/share/zoneinfo/Asia/Shanghai /etc/localtime
+        env:
+        - name: discovery.type
+          value: single-node
+        ports:
+        - containerPort: 6060
+        readinessProbe:
+          tcpSocket:
+            port: 6060
+          failureThreshold: 3
+          successThreshold: 1
+          timeoutSeconds: 10
+          periodSeconds: 3
+          initialDelaySeconds: 10
+        {{- if .Values.db.tatris.env }}
+          {{- toYaml .Values.db.tatris.env | nindent 10 }}
+        {{- end }}
+        {{- if .Values.db.tatris.resources }}
+        resources:
+          {{- toYaml .Values.db.tatris.resources | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+          - mountPath: /etc/localtime
+            name: tz-config
+      volumes:
+        - hostPath:
+            path: /usr/share/zoneinfo/Asia/Shanghai
+            type: ""
+          name: tz-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tatris
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: holoinsight-tatris
+spec:
+  clusterIP: None
+  ports:
+  - name: p6060
+    protocol: TCP
+    port: 6060
+  selector:
+    app.kubernetes.io/name: holoinsight-tatris
+
+
+{{- end }}
