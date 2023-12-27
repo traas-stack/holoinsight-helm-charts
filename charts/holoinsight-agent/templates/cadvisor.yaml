@@ -60,6 +60,11 @@ spec:
         - name: disk
           mountPath: /dev/disk
           readOnly: true
+          {{- if .Values.cadvisor.k3s }}
+        - name: containerd
+          mountPath: /run/containerd
+          readOnly: true
+          {{- end }}
         {{- if .Values.cadvisor.volumeMounts }}
         {{- toYaml .Values.cadvisor.volumeMounts | nindent 8 }}
         {{- end }}
@@ -87,4 +92,9 @@ spec:
           path: /dev/disk
       {{- if .Values.cadvisor.volumes }}
       {{- toYaml .Values.cadvisor.volumes | nindent 6 }}
+      {{- end }}
+      {{- if .Values.cadvisor.k3s }}
+      - name: containerd
+        hostPath:
+          path: /run/k3s/containerd
       {{- end }}

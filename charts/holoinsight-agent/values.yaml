@@ -23,14 +23,14 @@ agent:
   vars: [ ]
   probe:
     enabled: true
-  misc:
-    useSupervisord: false
 
 # [required]
 # cadvisorImage is the image of cadvisor used by holoinsight-agent.
 # Here is an example image, you need to set a different image according to your deployment environment.
 cadvisor:
-  image: gcr.io/cadvisor/cadvisor:v0.44.0
+  image: registry.cn-shanghai.aliyuncs.com/holoinsight/cadvisor:v0.44.0
+  k3s: false
+  #image: gcr.io/cadvisor/cadvisor:v0.44.0
   resources:
     requests:
       cpu: "0"
@@ -46,7 +46,7 @@ server:
     addr: registry.holoinsight-server:7202
   gateway:
     addr: gateway.holoinsight-server:19610
-  secure: true
+  secure: false
 
 # [optional]
 # agentK8sMetaSidecarCheck is used to define how to identify sidecar containers.
@@ -65,11 +65,9 @@ daemonagent:
     requests:
       cpu: "0"
       memory: "0"
-      ephemeral-storage: "0"
     limits:
       cpu: "0.25"
       memory: "256Mi"
-      ephemeral-storage: "10Gi"
 
 centralagent:
   # enabled controls whether centralagent is need to be deployed.

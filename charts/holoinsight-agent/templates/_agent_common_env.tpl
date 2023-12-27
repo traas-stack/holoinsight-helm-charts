@@ -59,7 +59,7 @@
       name: holoinsight-agent-cm
       key: cluster
 - name: USESUPERVISOR
-  value: {{ default "false" .Values.agent.misc.useSupervisord | quote }}
+  value: "true"
 - name: K8S_RESOURCES_LIMIT_CPU
   valueFrom:
     resourceFieldRef:

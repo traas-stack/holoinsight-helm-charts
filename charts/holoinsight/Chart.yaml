@@ -20,6 +20,6 @@ icon: https://github.com/traas-stack/holoinsight/raw/main/docs/logo/logo.png
 annotations:
   "artifacthub.io/license": Apache-2.0
 
-version: 0.2.3
+version: 0.2.5
 
 appVersion: "0.2.0"
