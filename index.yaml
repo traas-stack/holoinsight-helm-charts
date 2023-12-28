@@ -5,6 +5,27 @@ entries:
       artifacthub.io/license: Apache-2.0
     apiVersion: v2
     appVersion: 0.2.0
+    created: "2023-12-28T03:44:22.370296797Z"
+    description: HoloInsight Helm chart for Kubernetes
+    digest: f14d8d4d984ba6c17b7c21ef175aa5c19e5e10c509d3f6ab0bd82a6e8a7663c9
+    home: https://github.com/traas-stack/holoinsight
+    icon: https://github.com/traas-stack/holoinsight/raw/main/docs/logo/logo.png
+    keywords:
+    - holoinsight
+    - monitor
+    maintainers:
+    - email: xzchaoo@gmail.com
+      name: xzchaoo
+      url: https://github.com/xzchaoo
+    name: holoinsight
+    type: application
+    urls:
+    - https://github.com/traas-stack/holoinsight-helm-charts/releases/download/holoinsight-0.2.5/holoinsight-0.2.5.tgz
+    version: 0.2.5
+  - annotations:
+      artifacthub.io/license: Apache-2.0
+    apiVersion: v2
+    appVersion: 0.2.0
     created: "2023-06-13T09:26:58.902874416Z"
     description: HoloInsight Helm chart for Kubernetes
     digest: 57469e05686f9048d36de6fcad48719eb33facc0c04f84771d1af7d5e4ddfe23
@@ -44,6 +65,28 @@ entries:
     - https://github.com/traas-stack/holoinsight-helm-charts/releases/download/holoinsight-0.2.3/holoinsight-0.2.3.tgz
     version: 0.2.3
   holoinsight-agent:
+  - annotations:
+      artifacthub.io/license: Apache-2.0
+    apiVersion: v2
+    appVersion: 0.2.0
+    created: "2023-12-28T03:44:22.504194358Z"
+    description: HoloInsight Agent Helm chart for Kubernetes
+    digest: c5f45e41be9f306fd6ed22d6cb2330cfd3158501e8e876fe2a86bfa026a82313
+    home: https://github.com/traas-stack/holoinsight-agent
+    icon: https://github.com/traas-stack/holoinsight/raw/main/docs/logo/logo.png
+    keywords:
+    - holoinsight
+    - holoinsight-agent
+    - monitor
+    maintainers:
+    - email: xzchaoo@gmail.com
+      name: xzchaoo
+      url: https://github.com/xzchaoo
+    name: holoinsight-agent
+    type: application
+    urls:
+    - https://github.com/traas-stack/holoinsight-helm-charts/releases/download/holoinsight-agent-0.2.5/holoinsight-agent-0.2.5.tgz
+    version: 0.2.5
   - annotations:
       artifacthub.io/license: Apache-2.0
     apiVersion: v2
@@ -88,4 +131,4 @@ entries:
     urls:
     - https://github.com/traas-stack/holoinsight-helm-charts/releases/download/holoinsight-agent-0.2.3/holoinsight-agent-0.2.3.tgz
     version: 0.2.3
-generated: "2023-06-13T09:26:59.034599242Z"
+generated: "2023-12-28T03:44:22.504222Z"
