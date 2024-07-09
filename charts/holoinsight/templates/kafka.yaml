@@ -1,0 +1,153 @@
+{{ if .Values.db.kafka.enabled | default true }}
+
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: holoinsight-kafka
+  namespace: {{ .Release.namespace }}
+spec:
+  serviceName: holoinsight-kafka
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: holoinsight-kafka
+  template:
+    metadata:
+      name: holoinsight-kafka
+      labels:
+        app.kubernetes.io/name: holoinsight-kafka
+        {{- include "chart_common_labels" . | indent 8 }}
+    spec:
+      restartPolicy: Always
+      containers:
+        - name: kafka
+          image: {{ .Values.db.kafka.image }}
+          env:
+            - name: KAFKA_HEAP_OPTS
+              value: "-Xmx1024m -Xms1024m"
+            - name: KAFKA_NODE_ID
+              value: "1"
+            - name: KAFKA_PROCESS_ROLES
+              value: "broker,controller"
+            - name: KAFKA_LISTENERS
+              value: "PLAINTEXT://:9092,CONTROLLER://:9093"
+            - name: ALLOW_PLAINTEXT_LISTENER
+              value: "yes"
+          command:
+            - bash
+            - /scripts/setup.sh
+          volumeMounts:
+            - mountPath: /scripts/setup.sh
+              name: scripts
+              subPath: setup.sh
+          ports:
+            - containerPort: 9092
+          readinessProbe:
+            tcpSocket:
+              port: 9092
+            failureThreshold: 3
+            successThreshold: 1
+            timeoutSeconds: 10
+            periodSeconds: 3
+            initialDelaySeconds: 10
+        {{- if .Values.db.kafka.env }}
+          {{- toYaml .Values.db.kafka.env | nindent 10 }}
+        {{- end }}
+        {{- if .Values.db.kafka.resources }}
+          resources:
+          {{- toYaml .Values.db.kafka.resources | nindent 10 }}
+        {{- end }}
+      volumes:
+        - name: scripts
+          configMap:
+            name: kafka-scripts-config
+      securityContext:
+        runAsUser: 0
+        runAsGroup: 0
+        fsGroup: 0
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kafka
+  namespace: {{ .Release.namespace }}
+  labels:
+    name: kafka
+spec:
+  ports:
+    - name: p9092
+      protocol: TCP
+      port: 9092
+      targetPort: 9092
+    - name: p9093
+      protocol: TCP
+      port: 9093
+      targetPort: 9093
+  selector:
+    app.kubernetes.io/name: holoinsight-kafka
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kafka-scripts-config
+  labels:
+    app.kubernetes.io/name: holoinsight-kafka
+data:
+  setup.sh: |-
+    #!/bin/bash
+
+    export KAFKA_CONFIG_FILE=/opt/bitnami/kafka/config/server.properties
+
+    replace_in_file() {
+        local filename="${1:?filename is required}"
+        local match_regex="${2:?match regex is required}"
+        local substitute_regex="${3:?substitute regex is required}"
+        local posix_regex=${4:-true}
+
+        local result
+
+        # We should avoid using 'sed in-place' substitutions
+        # 1) They are not compatible with files mounted from ConfigMap(s)
+        # 2) We found incompatibility issues with Debian10 and "in-place" substitutions
+        local -r del=$'\001' # Use a non-printable character as a 'sed' delimiter to avoid issues
+        if [[ $posix_regex = true ]]; then
+            result="$(sed -E "s${del}${match_regex}${del}${substitute_regex}${del}g" "$filename")"
+        else
+            result="$(sed "s${del}${match_regex}${del}${substitute_regex}${del}g" "$filename")"
+        fi
+        echo "$result" > "$filename"
+    }
+
+    kafka_conf_set() {
+        local file="${1:?missing file}"
+        local key="${2:?missing key}"
+        local value="${3:?missing value}"
+
+        # Check if the value was set before
+        if grep -q "^[#\\s]*$key\s*=.*" "$file"; then
+            # Update the existing key
+            replace_in_file "$file" "^[#\\s]*${key}\s*=.*" "${key}=${value}" false
+        else
+            # Add a new key
+            printf '\n%s=%s' "$key" "$value" >>"$file"
+        fi
+    }
+
+    IP=`hostname -I | awk '{print $1}'`
+    HOSTNAME="$(hostname -s)"
+    if [[ $HOSTNAME =~ (.*)-([0-9]+)$ ]]; then
+        ORD=${BASH_REMATCH[2]}
+        export KAFKA_BROKER_ID="$((ORD + 1 ))"
+    else
+        echo "Failed to get index from hostname $HOSTNAME"
+        exit 1
+    fi
+    if [[ -f "/bitnami/kafka/data/meta.properties" ]]; then
+        kafka_conf_set "$KAFKA_CONFIG_FILE" "broker.id" "$KAFKA_BROKER_ID"
+    fi
+    export KAFKA_CFG_ADVERTISED_LISTENERS="PLAINTEXT://${IP}:9092"
+    exec /entrypoint.sh /run.sh
+
+{{- end }}
