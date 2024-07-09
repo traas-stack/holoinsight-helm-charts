@@ -30,7 +30,7 @@ server:
         driver-class-name: com.mysql.cj.jdbc.Driver
     holoinsight:
       roles:
-        active: query,registry,gateway,home,meta,apm
+        active: query,registry,gateway,home,meta,apm,agg-dispatcher,agg-executor
       metric:
         storage:
           type: ceresdbx
@@ -55,6 +55,10 @@ server:
           port: 9200
       security:
         whiteHosts: server,gateway,gateway.holoinsight-server
+      agg:
+        kafkaBootstrapServers: kafka:9092
+        topic: aggv1
+        consumerGroupId: "x1"
 
 # collector is config for holoinsight-collector
 collector:
@@ -83,6 +87,9 @@ db:
   es:
     enabled: true
     image: elasticsearch:7.16.1
+  kafka:
+    enabled: true
+    image: bitnami/kafka:3.5.1
   mongo:
     enabled: true
     image: mongo:4.4.18
